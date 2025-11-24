@@ -18,32 +18,54 @@ import io
 
 st.write("### Ingest Image and Convert to CSV via Kimi K2")
 image_file = st.file_uploader("Upload an image file", type=["png", "jpg", "jpeg"])
-if image_file is not None:
-    api_key = st.secrets["kimi_k2_api_key"] if "kimi_k2_api_key" in st.secrets else st.text_input("Enter your Kimi K2 API Key", type="password")
-    if api_key:
-        if st.button("Convert Image to CSV"):
-            try:
-                # Prepare the image for upload
-                files = {"file": (image_file.name, image_file, image_file.type)}
-                headers = {"Authorization": f"Bearer {api_key}"}
-                # Replace the URL below with the actual Kimi K2 endpoint
-                response = requests.post(
-                    "https://api.kimi.com/v1/k2/convert-image-to-csv",
-                    files=files,
-                    headers=headers,
-                )
-                if response.status_code == 200:
-                    csv_content = response.content.decode("utf-8")
-                    df_csv = pd.read_csv(io.StringIO(csv_content))
-                    st.write("#### CSV Data Preview")
-                    st.dataframe(df_csv)
-                else:
-                    st.error(f"Kimi K2 API Error: {response.status_code} - {response.text}")
-            except Exception as e:
-                st.error(f"Error processing image: {e}")
-    else:
-        st.info("Please provide your Kimi K2 API key.")
 
+from openai import OpenAI
+ 
+client = OpenAI(
+    api_key="sk-WSH31D2FSxhTXUaNTDQIqSVfOyOuh7adtBnwOhYUKDrzBbc1", # Replace MOONSHOT_API_KEY with the API Key you obtained from the Kimi Open Platform
+    base_url="https://api.moonshot.ai/v1",
+)
+ 
+completion = client.chat.completions.create(
+    model = "kimi-k2-turbo-preview",
+    messages = [
+        {"role": "system", "content": "You are Kimi, an AI assistant provided by Moonshot AI. You are proficient in Chinese and English conversations. You provide users with safe, helpful, and accurate answers. You will reject any requests involving terrorism, racism, or explicit content. Moonshot AI is a proper noun and should not be translated."},
+        {"role": "user", "content": "Hello, my name is Li Lei. What is 1+1?"}
+    ],
+    temperature = 0.6,
+)
+ 
+# We receive a response from the Kimi large language model via the API (role=assistant)
+st.write(completion.choices[0].message.content)
+
+#  if image_file is not None:
+#     api_key = st.secrets.get("kimi_k2_api_key", None)
+#     if not api_key:
+#         api_key = st.text_input("Enter your Kimi K2 API Key", type="password")
+#     if api_key:
+#         if st.button("Convert Image to CSV"):
+#             try:
+#                 # Prepare the image for upload
+#                 files = {"file": (image_file.name, image_file, image_file.type)}
+#                 headers = {"Authorization": f"Bearer {api_key}"}
+#                 # Replace the URL below with the actual Kimi K2 endpoint
+#                 response = requests.post(
+#                     "https://api.kimi.com/v1/k2/convert-image-to-csv",
+#                     files=files,
+#                     headers=headers,
+#                 )
+#                 if response.status_code == 200:
+#                     csv_content = response.content.decode("utf-8")
+#                     df_csv = pd.read_csv(io.StringIO(csv_content))
+#                     st.write("#### CSV Data Preview")
+#                     st.dataframe(df_csv)
+#                 else:
+#                     st.error(f"Kimi K2 API Error: {response.status_code} - {response.text}")
+#             except Exception as e:
+#                 st.error(f"Error processing image: {e}")
+#     else:
+#         st.info("Please provide your Kimi K2 API key.")
+ 
 # Calculate the repayments.
 loan_amount = home_value - deposit
 monthly_interest_rate = (interest_rate / 100) / 12
