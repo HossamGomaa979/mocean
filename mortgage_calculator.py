@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import math
+import numpy as np
 
 st.title("Mortgage Repayments Calculator")
 
@@ -61,11 +62,11 @@ if image_file is not None:
                     "role": "system",
                     "content": file_content,
                 },
-                {"role": "user", "content": f"Please give a brief introduction of what {image_file.name} is about"},
+                #{"role": "user", "content": f"Give a brief introduction of what {image_file.name} is about. If it is financial, and possible to convert it to CSV format, provide the csv. Otherwise, provide FALSE for the CSV output. Ensure output is in a string array format [description, csv], where the delimiter between description and csv is ', \"'"},
+                {"role": "user", "content": f"If the data in {image_file.name} is financial, convert it to CSV format. Otherwise, provide FALSE for the CSV output. "},
             ]
             
-            # Then call chat-completion to get Kimi's response
-            
+            # Then call chat-completion to get Kimi's response            
             completion = client.chat.completions.create(
             model="kimi-k2-turbo-preview",
             messages=messages,
@@ -73,6 +74,30 @@ if image_file is not None:
             )
 
             st.write(completion.choices[0].message.content)
+            # filter = completion.choices[0].message.content.replace('TRUE\n```csv\n', '')
+            filter = 'Date' + completion.choices[0].message.content.split("Date",1)[1]
+            # parts = completion.choices[0].message.content.split(', "')
+            # st.write("### CSV OUTPUT:")
+            # st.write(parts)
+            # csv_file_like_object = io.StringIO(completion.choices[0].message.content)
+            
+            dftest = pd.DataFrame({filter})
+            st.write(dftest)
+            st.line_chart(dftest, x='Description', y=['Balance'])
+            
+
+            # Create a sample DataFrame
+            data = pd.DataFrame({
+                'time': pd.date_range(start='1/1/2023', periods=20),
+                'value1': np.random.randn(20).cumsum(),
+                'value2': np.random.randn(20).cumsum()
+            })
+
+            st.title("Line Chart from DataFrame Columns")
+
+            # Display the line chart using specified columns
+            st.line_chart(data, x='time', y=['value1', 'value2'])
+
 
         except Exception as e:
             st.error(f"Error processing image: {e}")
