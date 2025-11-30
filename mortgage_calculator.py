@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import math
 import numpy as np
+from io import StringIO
 
 st.title("Mortgage Repayments Calculator")
 
@@ -75,33 +76,42 @@ if image_file is not None:
 
             st.write(completion.choices[0].message.content)
             # filter = completion.choices[0].message.content.replace('TRUE\n```csv\n', '')
-            filter = 'Date' + completion.choices[0].message.content.split("Date",1)[1]
-            # parts = completion.choices[0].message.content.split(', "')
-            # st.write("### CSV OUTPUT:")
-            # st.write(parts)
-            # csv_file_like_object = io.StringIO(completion.choices[0].message.content)
+            # filter = 'Date' + completion.choices[0].message.content.split("Date",1)[1]
+            filter = completion.choices[0].message.content.split("Balance",1)[1]
+            st.write(filter)
+
             
-            dftest = pd.DataFrame({filter})
-            st.write(dftest)
-            st.line_chart(dftest, x='Description', y=['Balance'])
-            
+            # csv_string = """2003-10-08,Previous balance,,,0.55,0.55
+            #     2003-10-14,Payroll Deposit - HOTEL,,,694.81,695.36
+            #     2003-10-14,Web Bill Payment - MASTERCARD,9685,200.00,,495.36"""
 
-            # Create a sample DataFrame
-            data = pd.DataFrame({
-                'time': pd.date_range(start='1/1/2023', periods=20),
-                'value1': np.random.randn(20).cumsum(),
-                'value2': np.random.randn(20).cumsum()
-            })
+            csv_string = "" + filter + ""
 
-            st.title("Line Chart from DataFrame Columns")
+            # 2. Convert to DataFrame with explicit column names
+            # header=None ensures the first row (2021-10-10) is read as data, not a header.
+            # names=[...] applies your custom labels to the columns.
+            csv_data = StringIO(csv_string)
+            df = pd.read_csv(
+                csv_data, 
+                header=None, 
+                names=['Date', 'Description', 'Ref.', 'withdrawals', 'Deposits', 'Balance'],
+                skipinitialspace=True
+            )
 
-            # Display the line chart using specified columns
-            st.line_chart(data, x='time', y=['value1', 'value2'])
+            # 3. Pre-process (Same as before)
+            df['Date'] = pd.to_datetime(df['Date'])
+            df.set_index('Date', inplace=True)
 
+            # 4. Streamlit Plotting
+            st.title("Balance Over Time")
+            st.write("Data Frame with Manual Headers:", df)
+            st.line_chart(df['Balance'])
 
         except Exception as e:
             st.error(f"Error processing image: {e}")
-    
+
+
+
  
 # Calculate the repayments.
 loan_amount = home_value - deposit
